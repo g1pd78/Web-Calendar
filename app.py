@@ -1,9 +1,8 @@
-from flask import Flask, jsonify
+from flask import Flask
 import sys
 from flask_restful import Api, Resource
-from dataclasses import dataclass
 from flask_restful import reqparse
-from flask_restful import inputs
+from flask_restful import inputs, fields, marshal_with
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 
@@ -12,7 +11,13 @@ db = SQLAlchemy(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///task.db'
 
 
-@dataclass
+resource_fields = {
+    "id": fields.Integer,
+    "event": fields.String,
+    "date": fields.String,
+}
+
+
 class Task(db.Model):
     __tablename__ = 'tasks'
     id: int
@@ -31,9 +36,10 @@ parser = reqparse.RequestParser()
 
 
 class Event(Resource):
+    @marshal_with(resource_fields)
     def get(self):
         tasks = Task.query.all()
-        return jsonify(tasks)
+        return tasks
 
     def post(self):
         args = parser.parse_args()
@@ -45,9 +51,10 @@ class Event(Resource):
 
 
 class Today(Resource):
+    @marshal_with(resource_fields)
     def get(self):
         tasks = Task.query.filter(Task.date == datetime.date.today()).all()
-        return jsonify(tasks)
+        return tasks
 
 
 api.add_resource(Event, '/event')
